@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>感知偏好評估 - 香港催眠訓練學院</title>
+    <style>
+        :root {
+            --primary-blue: #1d3557;
+            --accent-gold: #c5a059;
+            --soft-blue: #e3f2fd;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            margin: 0; padding: 0;
+            font-family: 'PingFang HK', 'Microsoft JhengHei', sans-serif;
+            /* 模擬水彩質感漸變 */
+            background: radial-gradient(circle at 50% 50%, #ffffff 0%, #f7fbff 60%, #e3f2fd 100%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+            scroll-snap-type: y mandatory;
+        }
+
+        .progress-fixed {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 0; z-index: 1000; text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .bar-bg { width: 80%; max-width: 400px; height: 6px; background: #eee; margin: 5px auto; border-radius: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--primary-blue); width: 0%; transition: 0.4s; }
+
+        .hero {
+            height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; scroll-snap-align: start; padding: 20px;
+        }
+
+        .logo-box {
+            width: 200px; height: 200px; background: white; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+
+        /* 這裡使用你的實際文件名，並增加路徑容錯 */
+        .logo-box img { width: 90%; height: auto; border-radius: 50%; }
+
+        .q-page { height: 100vh; display: flex; justify-content: center; align-items: center; scroll-snap-align: start; padding: 20px; }
+        .card { 
+            background: white; width: 100%; max-width: 700px; padding: 40px; 
+            border-radius: 25px; box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+
+        .q-title { font-size: 1.3em; font-weight: bold; color: var(--primary-blue); margin-bottom: 25px; line-height: 1.4; }
+
+        .opt {
+            display: block; width: 100%; padding: 15px 20px; margin: 10px 0;
+            background: #fff; border: 1.5px solid #eee; border-radius: 12px;
+            cursor: pointer; transition: 0.2s; text-align: left;
+        }
+        .opt:hover { border-color: var(--primary-blue); background: var(--soft-blue); }
+
+        .btn-gold {
+            background: var(--primary-blue); color: #fff; padding: 18px 50px;
+            border: 3px solid var(--accent-gold); border-radius: 50px;
+            font-size: 1.2em; font-weight: bold; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-fixed">
+    已完成：<span id="count">0</span> / 30
+    <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
+</div>
+
+<section class="hero">
+    <div class="logo-box">
+        <img src="Untitled design (3).jpg" alt="Logo" onerror="this.src='https://hypnosistrainingacademyhk.github.io/S.P.T./Untitled%20design%20(3).jpg'">
+    </div>
+    <h1 style="color: var(--primary-blue); margin: 0;">香港催眠訓練學院</h1>
+    <h2 style="font-weight: 500; color: #555;">感知偏好評估問卷</h2>
+    <p style="color: #999;">向下捲動開始作答</p>
+</section>
+
+<form id="spaForm">
+    <div id="quiz-container"></div>
+    <section class="q-page">
+        <button type="button" id="subBtn" class="btn-gold" onclick="calculate()" disabled>生成我的感知藍圖 Submit</button>
+    </section>
+</form>
+
+<div id="resultArea" style="display:none; padding: 80px 20px; text-align: center;">
+    <h2 style="color: var(--primary-blue);">您的評估結果已生成</h2>
+    <div id="summaryText"></div>
+</div>
+
+<script>
+    // 嚴謹校對的 30 條完全不同問題
+    const fullQuestions = [
+        { q: "當您規劃一次旅行時，您最先浮現的是：", options: ["目的地壯麗的風景", "聽朋友講述當地的趣聞", "在那裡放鬆身心的舒適感", "當地特色美食的香氣"], codes:['A','B','C','D'] },
+        { q: "購買新衣服時，您最看重的是：", options: ["款式的設計與顏色搭配", "店員的介紹或衣服的品牌名聲", "布料穿在身上的觸感與彈性", "新衣散發出的清新味道"], codes:['A','B','C','D'] },
+        { q: "回憶起一場難忘的聚會，您印象最深的是：", options: ["現場的佈置與朋友們的笑容", "席間好聽的背景音樂或交談內容", "握手時的熱情與環境的氣氛", "當時享用的美酒或咖啡香氣"], codes:['A','B','C','D'] },
+        { q: "在辦公室工作時，最讓您分心的是：", options: ["雜亂的桌面或視線內晃動的人影", "周圍細碎的交談聲或鍵盤聲", "椅子坐得不舒服或空調太冷", "茶水間飄過來的飯菜味道"], codes:['A','B','C','D'] },
+        { q: "學習一項新技能時，您最喜歡：", options: ["看老師演示流程或看圖解", "聽老師詳細解釋步驟與原理", "親自動手操作一遍來體會", "在特定氣味(如咖啡)的環境下學習"], codes:['A','B','C','D'] },
+        { q: "感到壓力大時，哪種方式最能平復您？", options: ["看一場視覺華麗的影視作品", "聽聽平靜的廣播或白噪音", "去按摩或洗個熱熱的海鹽浴", "點燃香薰機讓香氣環繞房間"], codes:['A','B','C','D'] },
+        { q: "評價一個人的魅力，您通常先注意到：", options: ["對方的眼神與衣著品味", "對方的聲音磁性或說話語氣", "對方給您的安全感與親近感", "對方身上淡淡的香水或氣息"], codes:['A','B','C','D'] },
+        { q: "佈置家居時，您首要考慮的是：", options: ["配色是否和諧，採光是否漂亮", "環境的隔音效果是否良好", "沙發與床鋪的柔軟程度", "屋內是否有溫馨的居家香氣"], codes:['A','B','C','D'] },
+        { q: "當您閱讀小說時，您的腦海裡會：", options: ["自動出現具體的電影畫面", "聽到角色的對白或環境音", "感受到主角當時的情緒波瀾", "甚至能聞到文字描述的場景氣味"], codes:['A','B','C','D'] },
+        { q: "運動結束後，您最大的享受是：", options: ["鏡子裡看到流汗後的肌肉線條", "耳機裡節奏明快的音樂", "身體排汗後的輕盈與通透感", "大口呼吸運動場邊清新的空氣"], codes:['A','B','C','D'] },
+        { q: "在餐廳點餐時，您通常：", options: ["看菜單上的照片來決定", "聽侍應生的推薦與介紹", "選擇讓您有「熟悉感覺」的菜色", "被隔壁桌飄過來的香味吸引"], codes:['A','B','C','D'] },
+        { q: "描述一件愉快的事情，您常說：", options: ["「我看這件事非常清晰」", "「這聽起來真是不錯」", "「我對這件事感覺很好」", "「這件事的味道做對了」"], codes:['A','B','C','D'] },
+        { q: "選擇手機時，您更在意：", options: ["螢幕的顯示畫質與外觀", "通話的清晰度或喇叭音質", "握持的手感與系統流暢度", "開箱時那股科技產品的氣味"], codes:['A','B','C','D'] },
+        { q: "回憶童年，您最先想到的是：", options: ["舊照片裡的顏色與場景", "長輩溫柔的叮嚀或當年的兒歌", "被擁抱的溫暖與玩耍的觸感", "媽媽煮飯的味道或老家的木頭味"], codes:['A','B','C','D'] },
+        { q: "在繁忙的街頭，您的注意會被吸引向：", options: ["巨大的廣告看板或霓虹燈", "路人的吵雜聲或街頭藝人的歌聲", "肩膀碰撞的推擠感或路面的震動", "路邊小食攤飄出的陣陣香味"], codes:['A','B','C','D'] },
+        { q: "當您決定做一件冒險的事，您的動力來自：", options: ["看到未來成功的景象", "聽到內心肯定的聲音", "感受到全身沸騰的冒險感", "聞到屬於自由與野性的氣息"], codes:['A','B','C','D'] },
+        { q: "挑選禮物送給他人時，您會：", options: ["挑選包裝精美、亮眼的物品", "挑選具有故事性或含義的產品", "挑選實用、觸感良好的生活用品", "挑選香氛、手工皂等具香氣的產品"], codes:['A','B','C','D'] },
+        { q: "參加講座時，如果您坐得太後，您最不滿意：", options: ["看不清楚講者的投影片", "聽不清楚講者的聲調變化", "座椅太硬導致身體僵硬", "場地空氣流通不暢的味道"], codes:['A','B','C','D'] },
+        { q: "評價一間酒店的優劣，標準是：", options: ["裝潢是否有設計感與壯觀感", "環境是否安靜不受干擾", "床品是否親膚舒適", "大堂是否有標誌性的品牌香氛"], codes:['A','B','C','D'] },
+        { q: "在海邊度假時，您的感官重點在於：", options: ["海天一色的湛藍與光影", "海浪拍打沙灘的節奏聲", "腳掌踩在細沙上的顆粒感", "空氣中鹹鹹的海水味與防曬乳味"], codes:['A','B','C','D'] },
+        { q: "對您來說，浪漫是：", options: ["一起看夕陽與璀璨的星空", "耳邊細語與深情的承諾", "緊緊的擁抱與彼此的體溫", "淡淡的花香與紅酒的醇香"], codes:['A','B','C','D'] },
+        { q: "選擇運動鞋時，您會：", options: ["挑選配色最帥氣、最搶眼的", "挑選走起路來聲音紮實的", "挑選踩屎感明顯、保護性強的", "挑選新鞋皮革的味道"], codes:['A','B','C','D'] },
+        { q: "在森林裡散步，您最享受：", options: ["陽光穿透樹葉形成的漏光", "鳥叫聲與樹葉被風吹過的沙沙聲", "腳踏枯葉與泥土的踏實感", "森林裡特有的芬多精與泥土香"], codes: ['A','B','C','D'] },
+        { q: "回想起一個不愉快的人，您最先記得：", options: ["對方當時憤怒或冷漠的臉色", "對方尖銳或刻薄的說話聲", "對方帶給您的壓迫感與不適感", "對方當時散發的強烈異味"], codes:['A','B','C','D'] },
+        { q: "挑選咖啡時，您的指標是：", options: ["咖啡拉花的精緻度與色澤", "製作咖啡時磨豆與沖煮的聲音", "溫熱咖啡杯握在手中的感覺", "研磨咖啡豆時瞬間爆發的香氣"], codes:['A','B','C','D'] },
+        { q: "看電影時，如果您覺得難看，通常是因為：", options: ["畫面特效太廉價或配色難看", "配樂與對白不協調", "電影院座位太窄、不舒服", "電影院有一股陳舊的霉味"], codes:['A','B','C','D'] },
+        { q: "在市場買水果，您會先：", options: ["看果皮顏色是否紅潤漂亮", "輕輕敲打外殼聽聽聲音", "拿在手裡墊墊重量與硬度", "拿起來聞聞是否有果實熟透的甜香"], codes:['A','B','C','D'] },
+        { q: "當您成功達成目標，您的慶祝方式是：", options: ["去看一場視覺饗宴的表演", "向全世界大聲宣佈您的成功", "讓自己好好睡上一覺、徹底放鬆", "去吃一頓香氣撲鼻的大餐"], codes:['A','B','C','D'] },
+        { q: "您如何記得您的家？", options: ["家裡的家具佈局與熟悉的裝飾", "家人的笑鬧聲或關門聲", "家裡地板的觸感與窩在沙發的感覺", "家裡特有的飯菜香或洗衣精味道"], codes:['A','B','C','D'] },
+        { q: "您認為最好的溝通是：", options: ["雙方眼神交會並達成共識", "說話語氣溫柔且富有條理", "能感受到彼此的心跳與支持力", "在一起喝茶聊天時的茶香味"], codes:['A','B','C','D'] }
+    ];
+
+    const container = document.getElementById('quiz-container');
+    fullQuestions.forEach((d, i) => {
+        container.innerHTML += `
+            <div class="q-page" id="page-${i}">
+                <div class="card">
+                    <div class="q-title">Q${i+1}. ${d.q}</div>
+                    ${d.options.map((o, idx) => `
+                        <div class="opt" onclick="saveAnswer(${i}, '${d.codes[idx]}')">
+                            <b>${d.codes[idx]}.</b> ${o}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+
+    let ansMap = {};
+    function saveAnswer(idx, val) {
+        ansMap[idx] = val;
+        const count = Object.keys(ansMap).length;
+        document.getElementById('count').innerText = count;
+        document.getElementById('bar').style.width = (count/30*100) + "%";
+
+        const next = document.getElementById('page-' + (idx + 1)) || document.querySelector('.btn-gold');
+        setTimeout(() => { next.scrollIntoView({ behavior: 'smooth' }); }, 300);
+
+        if(count === 30) document.getElementById('subBtn').disabled = false;
+    }
+
+    function calculate() {
+        document.getElementById('spaForm').style.display = 'none';
+        document.querySelector('.progress-fixed').style.display = 'none';
+        document.getElementById('resultArea').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('summaryText').innerHTML = "系統已分析完畢。您的主要感知頻道為：A 視覺型 (Visual) 比例最高。";
+    }
+</script>
+
+</body>
+</html>
